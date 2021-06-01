@@ -1,0 +1,20 @@
+{
+    "batch_size" : 256,
+    "epochs" : 10,
+    "cuda" : true,
+    "learning_rate" : 0.001,
+    "momentum" : 0.9,
+    "logging_interval" : 250,
+    "l2_normalize" : true,
+    "embedding_dim" : 64,
+    "use_fc" : false,
+    "margin_tl" : 0.2,
+    "pl_emb_norm" : 5e-4,
+    "pl_mask_norm" : 5e-4,
+    "pl_tt_sim" : 5e-5,
+    "pl_vv_sim" : 5e-5,
+    "pl_vs" : 5e-3,
+    "data_dir" : "data",
+    "optimizer" : "sgd"
+
+}
