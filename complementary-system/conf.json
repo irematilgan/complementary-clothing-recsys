@@ -4,7 +4,7 @@
     "cuda" : true,
     "learning_rate" : 0.001,
     "momentum" : 0.9,
-    "logging_interval" : 250,
+    "logging_interval" : 3,
     "l2_normalize" : true,
     "embedding_dim" : 64,
     "use_fc" : false,

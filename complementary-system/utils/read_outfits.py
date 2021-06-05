@@ -17,23 +17,25 @@ def load_fitb_questions():
     return
 
 class TripletImageLoader(torch.utils.data.Dataset):
-    id2cat = {}
-    desc2vec = {}
-    #ids = []
-    img_ids = []
-    metadata = {}
-    typespaces = {}
-    id2index = {}
-    cat2ids = {}
-    full_id2img_id = {}
-    id2ind = {}
-    pos_pairs = []
-    text_dim = 6000
+
+    
 
 
     def __init__(self,metadata,text_dim,transform = None, loader = load_image):
         super().__init__()
         print("INFO : TripletImageLoader class has been created..")
+        self.id2cat = {}
+        self.desc2vec = {}
+        #ids = []
+        self.img_ids = []
+        self.metadata = {}
+        self.typespaces = {}
+        self.id2index = {}
+        self.cat2ids = {}
+        self.full_id2img_id = {}
+        self.id2ind = {}
+        self.pos_pairs = []
+        self.text_dim = 6000
         self.metadata = metadata
         #self.ids = list(self.metadata.keys())
         self.text_dim = text_dim
@@ -48,6 +50,7 @@ class TripletImageLoader(torch.utils.data.Dataset):
         with open("complementary-system/type_space.txt") as f:
             for index, line in enumerate(f):
                 self.typespaces[tuple(line.split(","))] = index
+
             
             #self.typespaces = [tuple(map(str, i.split('\n'))) for i in f]
 
@@ -99,8 +102,8 @@ class TripletImageLoader(torch.utils.data.Dataset):
                 desc = metadata[img_id]["url_name"]
             
             desc = desc.replace('\n','').strip().lower()
-            print(img_id)
-            print(desc)
+            #print(img_id)
+            #print(desc)
             if desc and desc in self.desc2vec:
                 self.id2desc[img_id] = desc
 
@@ -109,27 +112,29 @@ class TripletImageLoader(torch.utils.data.Dataset):
 
         ## Get positive pairs
         ## img1, text_vec1, img2, text_vec2
-        pos_pairs = []
+        self.pos_pairs = []
         for outfit_set in train_dict:
             items = outfit_set["items"]
             outfit_id = outfit_set["set_id"]
             set_length = len(items)
             assert(set_length == 2)
-            pos_pairs.append([outfit_id, items[0]["item_id"], items[1]["item_id"]])
+            self.pos_pairs.append([outfit_id, items[0]["item_id"], items[1]["item_id"]])
 
-        print(self.id2desc)
-        img_pos, desc_pos, type_pos = self.load_item(pos_pairs[0][-1])
+        #print(self.id2desc)
+        #img_pos, desc_pos, type_pos = self.load_item(pos_pairs[0][-1])
         
-        print(self.sample_negative(self.id2cat[pos_pairs[0][-1]],pos_pairs[0][-1]))
-
+        #print(self.sample_negative(self.id2cat[pos_pairs[0][-1]],pos_pairs[0][-1]))
+        print(self.id2cat['1027065'])
 
 
            
         
     def get_typespace(self, anchor, pos):
-        if((anchor,pos) not in self.typespaces):
-            return self.typespaces((pos,anchor))
-        return self.typespaces((anchor,pos))
+        query = (anchor,pos)
+        if query not in self.typespaces:
+            query = (pos,anchor)
+
+        return self.typespaces[query]
         
    
     def sample_negative(self, pos_type,pos_id):
@@ -148,23 +153,31 @@ class TripletImageLoader(torch.utils.data.Dataset):
         if self.transform is not None:
             img = self.transform(img)
 
-        img_desc = self.id2desc[img_id]
-        vec = self.desc2vec[img_desc]
+        try:
+            img_desc = self.id2desc[img_id]
+            vec = self.desc2vec[img_desc]
+            has_text = True
+        except KeyError:
+            vec = np.zeros(self.text_dim, np.float32)
+            has_text = False
+            
+  
         item_type = self.id2cat[img_id]
-        return img, vec, item_type
+        return img, vec, has_text, item_type
 
     def __getitem__(self,index):
 
         # For training
         outfit_id, anchor_id, pos_id = self.pos_pairs[index]
-        img_anchor, desc_anchor, type_anchor = self.load_item(anchor_id)
-        img_pos, desc_pos, type_pos = self.load_item(pos_id)
+        img_anchor, desc_anchor, has_text1, type_anchor = self.load_item(anchor_id)
+        img_pos, desc_pos, has_text2, type_pos = self.load_item(pos_id)
         condition = self.get_typespace(type_anchor, type_pos)
 
         neg_id = self.sample_negative(type_pos, pos_id)
-        img_neg, desc_neg, type_neg = self.load_item(neg_id)
+        img_neg, desc_neg, has_text3, type_neg = self.load_item(neg_id)
 
-        return img_anchor, desc_anchor, img_pos, desc_pos, img_neg, desc_neg, condition
+        #print(f"anchor : {anchor_id} pos : {pos_id}, neg : {neg_id} condition : {condition}")
+        return img_anchor, desc_anchor, has_text1, img_pos, desc_pos, has_text1, img_neg, desc_neg, has_text3, condition
 
         # TODO : Test
 
